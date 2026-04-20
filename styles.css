@@ -1,0 +1,58 @@
+/*
+  Basic page style:
+  - Use a simple font
+  - Add space around content
+  - Light background color
+*/
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f4f7fb;
+  margin: 0;
+  padding: 24px;
+}
+
+/*
+  Center the tracker and make it look like a card.
+*/
+.container {
+  max-width: 520px;
+  margin: 0 auto;
+  background-color: #ffffff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+h1 {
+  margin-top: 0;
+}
+
+#completion-text {
+  font-weight: bold;
+  color: #1e3a8a;
+}
+
+/*
+  Remove default bullets and spacing from the list.
+*/
+#habit-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/*
+  Space between habits to make reading easier.
+*/
+#habit-list li {
+  margin-bottom: 12px;
+}
+
+/*
+  Make label and checkbox align nicely.
+*/
+label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
