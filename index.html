@@ -11,14 +11,20 @@
       <h1>My Habit Tracker</h1>
 
       <!--
-        This paragraph shows how many habits are done.
-        JavaScript updates this number whenever checkboxes change.
+        This paragraph will show how many habits are done.
+        JavaScript updates the number when boxes are checked.
       -->
-      <p id="completion-text">Completed: 0 / 6</p>
+      <p id="completion-text">Completed: 0 / 5</p>
 
       <!--
-        Simple list of habits.
-        Each item has a checkbox and text label.
+        This button clears all checkboxes.
+        It lets us reset the tracker in one click.
+      -->
+      <button id="reset-button" type="button">Reset All Habits</button>
+
+      <!--
+        This is a very simple list of habits.
+        Each habit has a checkbox and a label.
       -->
       <ul id="habit-list">
         <li>
@@ -29,11 +35,6 @@
         <li>
           <label>
             <input type="checkbox" class="habit-checkbox" /> Walk for 20 minutes
-          </label>
-        </li>
-        <li>
-          <label>
-            <input type="checkbox" class="habit-checkbox" /> Journal
           </label>
         </li>
         <li>

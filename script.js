@@ -4,71 +4,84 @@ const habitCheckboxes = document.querySelectorAll('.habit-checkbox');
 // Get the paragraph where we show progress.
 const completionText = document.getElementById('completion-text');
 
-// This is the localStorage key where we keep checkbox states.
-const storageKey = 'habitCheckboxStates';
+// Get the reset button.
+const resetButton = document.getElementById('reset-button');
 
-// Count how many boxes are checked and show it on screen.
+// This function counts checked boxes and updates the text.
 function updateCompletionCount() {
   let completedHabits = 0;
 
-  // Check each checkbox one by one.
+  // Loop through every checkbox.
   habitCheckboxes.forEach(function (checkbox) {
     if (checkbox.checked) {
       completedHabits = completedHabits + 1;
     }
   });
 
-  // Example: "Completed: 3 / 6"
+  // Build the message like "Completed: 2 / 5".
   completionText.textContent =
     'Completed: ' + completedHabits + ' / ' + habitCheckboxes.length;
 }
 
 // Save all checkbox states to localStorage.
-function saveCheckboxStates() {
-  const states = [];
+function saveHabitStates() {
+  // We will store true/false values in a simple array.
+  const checkedStates = [];
 
-  // Store true/false for each checkbox.
   habitCheckboxes.forEach(function (checkbox) {
-    states.push(checkbox.checked);
+    checkedStates.push(checkbox.checked);
   });
 
-  // Save as JSON text.
-  localStorage.setItem(storageKey, JSON.stringify(states));
+  // Convert array to text and save it in the browser.
+  localStorage.setItem('habitCheckboxStates', JSON.stringify(checkedStates));
 }
 
-// Load saved states from localStorage and apply them to checkboxes.
-function loadCheckboxStates() {
-  const savedStates = localStorage.getItem(storageKey);
+// Load checkbox states from localStorage when page opens.
+function loadHabitStates() {
+  // Read saved text from localStorage.
+  const savedStatesText = localStorage.getItem('habitCheckboxStates');
 
-  // If there is nothing saved yet, stop.
-  if (!savedStates) {
+  // If nothing was saved before, stop here.
+  if (!savedStatesText) {
     return;
   }
 
-  // Convert saved JSON text back to an array.
-  const parsedStates = JSON.parse(savedStates);
+  // Convert saved text back into an array.
+  const savedStates = JSON.parse(savedStatesText);
 
-  // Extra safety: only continue if the saved value is really an array.
-  if (!Array.isArray(parsedStates)) {
-    return;
-  }
-
-  // Apply each saved true/false value to matching checkbox.
+  // Apply each saved state to each checkbox.
   habitCheckboxes.forEach(function (checkbox, index) {
-    checkbox.checked = parsedStates[index] === true;
+    checkbox.checked = Boolean(savedStates[index]);
   });
 }
 
-// 1) Load saved states first.
-loadCheckboxStates();
+// Reset all habits to incomplete.
+function resetAllHabits() {
+  // Uncheck every box.
+  habitCheckboxes.forEach(function (checkbox) {
+    checkbox.checked = false;
+  });
 
-// 2) Add listeners so every change updates count + saves state.
+  // Save cleared state and update the counter text.
+  saveHabitStates();
+  updateCompletionCount();
+}
+
+// When user changes any checkbox:
+// 1) save checkbox states
+// 2) update the completion count
 habitCheckboxes.forEach(function (checkbox) {
   checkbox.addEventListener('change', function () {
+    saveHabitStates();
     updateCompletionCount();
-    saveCheckboxStates();
   });
 });
 
-// 3) Update count once on page load.
+// When user clicks reset, clear all habits.
+resetButton.addEventListener('click', resetAllHabits);
+
+// On page load:
+// 1) load saved states
+// 2) show the correct completion number
+loadHabitStates();
 updateCompletionCount();
