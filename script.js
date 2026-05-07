@@ -7,6 +7,7 @@ const habitList = document.getElementById('habit-list');
 const resetButton = document.getElementById('reset-button');
 const addHabitForm = document.getElementById('add-habit-form');
 const habitNameInput = document.getElementById('habit-name-input');
+const habitItemTemplate = document.getElementById('habit-item-template');
 
 // This is our structured data model:
 // each habit is an object like { name: 'Read 10 pages', completed: false }.
@@ -48,32 +49,67 @@ function loadHabits() {
   }
 }
 
+// Keep all UI refresh work in one place.
+// We call this after every action that changes data.
+function refreshUI() {
+  saveHabits();
+  renderHabits();
+  updateCompletionCount();
+}
+
 // Build the checkbox list from the habits array.
 function renderHabits() {
   // Clear old list items so we can rebuild from scratch.
   habitList.innerHTML = '';
 
   habits.forEach(function (habit, index) {
-    const listItem = document.createElement('li');
-    const label = document.createElement('label');
-    const checkbox = document.createElement('input');
+    // Clone the template so each habit gets the same beginner-friendly HTML structure.
+    const habitTemplateCopy = habitItemTemplate.content.cloneNode(true);
+    const listItem = habitTemplateCopy.querySelector('li');
+    const checkbox = habitTemplateCopy.querySelector('input[type="checkbox"]');
+    const nameText = habitTemplateCopy.querySelector('.habit-name');
+    const editButton = habitTemplateCopy.querySelector('.edit-habit-button');
+    const deleteButton = habitTemplateCopy.querySelector('.delete-habit-button');
 
-    checkbox.type = 'checkbox';
     checkbox.checked = habit.completed;
+
+    // Show the current habit name.
+    nameText.textContent = habit.name;
 
     // When one checkbox changes:
     // 1) update data model
-    // 2) save data
-    // 3) update completion text
+    // 2) refresh saved data + list + counter
     checkbox.addEventListener('change', function () {
       habits[index].completed = checkbox.checked;
-      saveHabits();
-      updateCompletionCount();
+      refreshUI();
     });
 
-    label.appendChild(checkbox);
-    label.append(' ' + habit.name);
-    listItem.appendChild(label);
+    // Edit button: ask for a new name and update if valid.
+    editButton.addEventListener('click', function () {
+      const updatedName = prompt('Edit habit name:', habits[index].name);
+
+      // If user clicks Cancel, prompt returns null.
+      if (updatedName === null) {
+        return;
+      }
+
+      const trimmedName = updatedName.trim();
+
+      // Do not allow blank names.
+      if (!trimmedName) {
+        return;
+      }
+
+      habits[index].name = trimmedName;
+      refreshUI();
+    });
+
+    // Delete button: remove this habit from the array.
+    deleteButton.addEventListener('click', function () {
+      habits.splice(index, 1);
+      refreshUI();
+    });
+
     habitList.appendChild(listItem);
   });
 }
@@ -97,9 +133,7 @@ function resetAllHabits() {
     habit.completed = false;
   });
 
-  saveHabits();
-  renderHabits();
-  updateCompletionCount();
+  refreshUI();
 }
 
 // Add a brand new habit object to the array.
@@ -109,9 +143,7 @@ function addHabit(name) {
     completed: false
   });
 
-  saveHabits();
-  renderHabits();
-  updateCompletionCount();
+  refreshUI();
 }
 
 // Add habit when the form is submitted.

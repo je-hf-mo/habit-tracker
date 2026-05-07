@@ -35,6 +35,25 @@
       <ul id="habit-list"></ul>
     </main>
 
+    <!--
+      Reusable habit item structure.
+      JavaScript clones this template for each habit.
+    -->
+    <template id="habit-item-template">
+      <li>
+        <div class="habit-row">
+          <label>
+            <input type="checkbox" />
+            <span class="habit-name"></span>
+          </label>
+          <div class="habit-actions">
+            <button type="button" class="edit-habit-button">Edit</button>
+            <button type="button" class="delete-habit-button">Delete</button>
+          </div>
+        </div>
+      </li>
+    </template>
+
     <script src="script.js"></script>
   </body>
 </html>
