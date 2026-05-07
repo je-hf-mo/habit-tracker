@@ -10,49 +10,29 @@
     <main class="container">
       <h1>My Habit Tracker</h1>
 
-      <!--
-        This paragraph will show how many habits are done.
-        JavaScript updates the number when boxes are checked.
-      -->
-      <p id="completion-text">Completed: 0 / 5</p>
+      <!-- JavaScript updates this text to show progress. -->
+      <p id="completion-text">Completed: 0 / 0</p>
 
       <!--
-        This button clears all checkboxes.
-        It lets us reset the tracker in one click.
+        Simple form for adding a new habit.
+        We read the text from this input when the Add button is clicked.
       -->
+      <form id="add-habit-form">
+        <input
+          id="habit-name-input"
+          type="text"
+          placeholder="Add a new habit"
+          aria-label="Habit name"
+          required
+        />
+        <button type="submit">Add Habit</button>
+      </form>
+
+      <!-- This button clears all habits to incomplete. -->
       <button id="reset-button" type="button">Reset All Habits</button>
 
-      <!--
-        This is a very simple list of habits.
-        Each habit has a checkbox and a label.
-      -->
-      <ul id="habit-list">
-        <li>
-          <label>
-            <input type="checkbox" class="habit-checkbox" /> Drink 8 glasses of water
-          </label>
-        </li>
-        <li>
-          <label>
-            <input type="checkbox" class="habit-checkbox" /> Walk for 20 minutes
-          </label>
-        </li>
-        <li>
-          <label>
-            <input type="checkbox" class="habit-checkbox" /> Read 10 pages
-          </label>
-        </li>
-        <li>
-          <label>
-            <input type="checkbox" class="habit-checkbox" /> Meditate for 5 minutes
-          </label>
-        </li>
-        <li>
-          <label>
-            <input type="checkbox" class="habit-checkbox" /> Sleep before 11 PM
-          </label>
-        </li>
-      </ul>
+      <!-- JavaScript rebuilds this list from the habits array. -->
+      <ul id="habit-list"></ul>
     </main>
 
     <script src="script.js"></script>
