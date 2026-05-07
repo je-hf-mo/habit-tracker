@@ -7,6 +7,7 @@ const habitList = document.getElementById('habit-list');
 const resetButton = document.getElementById('reset-button');
 const addHabitForm = document.getElementById('add-habit-form');
 const habitNameInput = document.getElementById('habit-name-input');
+const habitItemTemplate = document.getElementById('habit-item-template');
 
 // This is our structured data model:
 // each habit is an object like { name: 'Read 10 pages', completed: false }.
@@ -62,6 +63,13 @@ function renderHabits() {
   habitList.innerHTML = '';
 
   habits.forEach(function (habit, index) {
+    // Clone the template so each habit gets the same beginner-friendly HTML structure.
+    const habitTemplateCopy = habitItemTemplate.content.cloneNode(true);
+    const listItem = habitTemplateCopy.querySelector('li');
+    const checkbox = habitTemplateCopy.querySelector('input[type="checkbox"]');
+    const nameText = habitTemplateCopy.querySelector('.habit-name');
+    const editButton = habitTemplateCopy.querySelector('.edit-habit-button');
+    const deleteButton = habitTemplateCopy.querySelector('.delete-habit-button');
     const listItem = document.createElement('li');
     const row = document.createElement('div');
     const label = document.createElement('label');
@@ -74,7 +82,6 @@ function renderHabits() {
     row.className = 'habit-row';
     actions.className = 'habit-actions';
 
-    checkbox.type = 'checkbox';
     checkbox.checked = habit.completed;
 
     // Show the current habit name.
