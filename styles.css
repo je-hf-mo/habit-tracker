@@ -85,3 +85,23 @@ label {
   align-items: center;
   gap: 8px;
 }
+
+/* Keep each habit on one row with actions on the right. */
+.habit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* Keep edit/delete buttons grouped together. */
+.habit-actions {
+  display: flex;
+  gap: 6px;
+}
+
+/* Small buttons that match the simple style of the app. */
+.habit-actions button {
+  padding: 5px 8px;
+  cursor: pointer;
+}
