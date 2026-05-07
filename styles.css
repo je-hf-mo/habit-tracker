@@ -32,6 +32,18 @@ h1 {
   color: #1e3a8a;
 }
 
+/* Row for the input + add button */
+#add-habit-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+#habit-name-input {
+  flex: 1;
+  padding: 8px;
+}
+
 /*
   Simple style for the reset button.
 */
