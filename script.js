@@ -70,6 +70,17 @@ function renderHabits() {
     const nameText = habitTemplateCopy.querySelector('.habit-name');
     const editButton = habitTemplateCopy.querySelector('.edit-habit-button');
     const deleteButton = habitTemplateCopy.querySelector('.delete-habit-button');
+    const listItem = document.createElement('li');
+    const row = document.createElement('div');
+    const label = document.createElement('label');
+    const checkbox = document.createElement('input');
+    const nameText = document.createElement('span');
+    const actions = document.createElement('div');
+    const editButton = document.createElement('button');
+    const deleteButton = document.createElement('button');
+
+    row.className = 'habit-row';
+    actions.className = 'habit-actions';
 
     checkbox.checked = habit.completed;
 
@@ -85,6 +96,8 @@ function renderHabits() {
     });
 
     // Edit button: ask for a new name and update if valid.
+    editButton.type = 'button';
+    editButton.textContent = 'Edit';
     editButton.addEventListener('click', function () {
       const updatedName = prompt('Edit habit name:', habits[index].name);
 
@@ -105,11 +118,20 @@ function renderHabits() {
     });
 
     // Delete button: remove this habit from the array.
+    deleteButton.type = 'button';
+    deleteButton.textContent = 'Delete';
     deleteButton.addEventListener('click', function () {
       habits.splice(index, 1);
       refreshUI();
     });
 
+    label.appendChild(checkbox);
+    label.appendChild(nameText);
+    actions.appendChild(editButton);
+    actions.appendChild(deleteButton);
+    row.appendChild(label);
+    row.appendChild(actions);
+    listItem.appendChild(row);
     habitList.appendChild(listItem);
   });
 }
