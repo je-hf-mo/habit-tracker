@@ -36,7 +36,7 @@ let habits = [];
 async function fetchHabitsFromSupabase() {
   const { data, error } = await supabaseClient
     .from('habits')
-    .select('id, name, completed')
+    .select('id, name')
     .order('id', { ascending: true });
 
   if (error) {
@@ -53,7 +53,7 @@ async function createHabitInSupabase(name) {
   const { data, error } = await supabaseClient
     .from('habits')
     .insert([{ name: name, completed: false }])
-    .select('id, name, completed')
+    .select('id, name')
     .single();
 
   if (error) {
