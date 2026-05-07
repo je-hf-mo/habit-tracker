@@ -1,7 +1,21 @@
-// A single key name so we always save/load from the same localStorage location.
-const HABITS_STORAGE_KEY = 'habitsData';
+// ------------------------------------------------------------
+// Supabase configuration
+// ------------------------------------------------------------
+// These values tell the browser how to reach your Supabase project.
+const SUPABASE_URL = 'https://lwpzoabxiszakrkeqgms.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY =
+  'sb_publishable_WUO5mINQS4VX50X3ZhxIOw_syKnHAqV';
 
-// Grab elements we will use many times.
+// Create one reusable Supabase client.
+// window.supabase comes from the CDN script added in index.html.
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY
+);
+
+// ------------------------------------------------------------
+// Grab HTML elements we use often.
+// ------------------------------------------------------------
 const completionText = document.getElementById('completion-text');
 const habitList = document.getElementById('habit-list');
 const resetButton = document.getElementById('reset-button');
@@ -9,107 +23,130 @@ const addHabitForm = document.getElementById('add-habit-form');
 const habitNameInput = document.getElementById('habit-name-input');
 const habitItemTemplate = document.getElementById('habit-item-template');
 
-// This is our structured data model:
-// each habit is an object like { name: 'Read 10 pages', completed: false }.
+// This array is the frontend working copy of habits.
+// IMPORTANT: `completed` is local-only for now.
 let habits = [];
 
-// Default habits used the first time someone opens the page.
-const defaultHabits = [
-  { name: 'Drink 8 glasses of water', completed: false },
-  { name: 'Walk for 20 minutes', completed: false },
-  { name: 'Read 10 pages', completed: false },
-  { name: 'Meditate for 5 minutes', completed: false },
-  { name: 'Sleep before 11 PM', completed: false }
-];
+// ------------------------------------------------------------
+// Data functions (talk to Supabase)
+// ------------------------------------------------------------
 
-// Save the whole habits array to localStorage.
-function saveHabits() {
-  localStorage.setItem(HABITS_STORAGE_KEY, JSON.stringify(habits));
-}
+// Load all habits from Supabase.
+// The table has only: id, name.
+// We add completed:false locally after fetching.
+async function fetchHabitsFromSupabase() {
+  const { data, error } = await supabaseClient
+    .from('habits')
+    .select('id, name')
+    .order('id', { ascending: true });
 
-// Read habits array from localStorage.
-function loadHabits() {
-  const savedHabitsText = localStorage.getItem(HABITS_STORAGE_KEY);
-
-  // If nothing is saved yet, start with the default habits.
-  if (!savedHabitsText) {
-    habits = defaultHabits;
-    saveHabits();
+  if (error) {
+    console.error('Could not load habits from Supabase:', error);
+    habits = [];
     return;
   }
 
-  const parsedHabits = JSON.parse(savedHabitsText);
-
-  // Basic safety check: only use data if it is an array.
-  if (Array.isArray(parsedHabits)) {
-    habits = parsedHabits;
-  } else {
-    habits = defaultHabits;
-    saveHabits();
-  }
+  // Convert backend rows into UI habit objects.
+  habits = (data || []).map(function (habitRow) {
+    return {
+      id: habitRow.id,
+      name: habitRow.name,
+      completed: false
+    };
+  });
 }
 
-// Keep all UI refresh work in one place.
-// We call this after every action that changes data.
+// Insert one new habit row and return the inserted row.
+// Again, backend row has only id + name.
+async function createHabitInSupabase(name) {
+  const { data, error } = await supabaseClient
+    .from('habits')
+    .insert([{ name: name }])
+    .select('id, name')
+    .single();
+
+  if (error) {
+    console.error('Could not create habit:', error);
+    return null;
+  }
+
+  // Add local-only completed flag for frontend tracking.
+  return {
+    id: data.id,
+    name: data.name,
+    completed: false
+  };
+}
+
+// Update only name in Supabase.
+async function updateHabitNameInSupabase(id, newName) {
+  const { error } = await supabaseClient.from('habits').update({ name: newName }).eq('id', id);
+
+  if (error) {
+    console.error('Could not update habit name:', error);
+    return false;
+  }
+
+  return true;
+}
+
+// Delete one habit row by id.
+async function deleteHabitInSupabase(id) {
+  const { error } = await supabaseClient.from('habits').delete().eq('id', id);
+
+  if (error) {
+    console.error('Could not delete habit:', error);
+    return false;
+  }
+
+  return true;
+}
+
+// ------------------------------------------------------------
+// UI functions (render/update page)
+// ------------------------------------------------------------
+
 function refreshUI() {
-  saveHabits();
   renderHabits();
   updateCompletionCount();
 }
 
-// Build the checkbox list from the habits array.
 function renderHabits() {
-  // Clear old list items so we can rebuild from scratch.
   habitList.innerHTML = '';
 
   habits.forEach(function (habit, index) {
-    // Clone the template so each habit gets the same beginner-friendly HTML structure.
     const habitTemplateCopy = habitItemTemplate.content.cloneNode(true);
     const listItem = habitTemplateCopy.querySelector('li');
     const checkbox = habitTemplateCopy.querySelector('input[type="checkbox"]');
     const nameText = habitTemplateCopy.querySelector('.habit-name');
     const editButton = habitTemplateCopy.querySelector('.edit-habit-button');
     const deleteButton = habitTemplateCopy.querySelector('.delete-habit-button');
-    const listItem = document.createElement('li');
-    const row = document.createElement('div');
-    const label = document.createElement('label');
-    const checkbox = document.createElement('input');
-    const nameText = document.createElement('span');
-    const actions = document.createElement('div');
-    const editButton = document.createElement('button');
-    const deleteButton = document.createElement('button');
 
-    row.className = 'habit-row';
-    actions.className = 'habit-actions';
-
-    checkbox.checked = habit.completed;
-
-    // Show the current habit name.
+    checkbox.checked = Boolean(habit.completed);
     nameText.textContent = habit.name;
 
-    // When one checkbox changes:
-    // 1) update data model
-    // 2) refresh saved data + list + counter
+    // Checkbox tracking is local-only for now.
     checkbox.addEventListener('change', function () {
       habits[index].completed = checkbox.checked;
       refreshUI();
     });
 
-    // Edit button: ask for a new name and update if valid.
-    editButton.type = 'button';
-    editButton.textContent = 'Edit';
-    editButton.addEventListener('click', function () {
-      const updatedName = prompt('Edit habit name:', habits[index].name);
+    editButton.addEventListener('click', async function () {
+      const updatedName = prompt('Edit habit name:', habit.name);
 
-      // If user clicks Cancel, prompt returns null.
       if (updatedName === null) {
         return;
       }
 
       const trimmedName = updatedName.trim();
 
-      // Do not allow blank names.
       if (!trimmedName) {
+        return;
+      }
+
+      const wasUpdated = await updateHabitNameInSupabase(habit.id, trimmedName);
+
+      if (!wasUpdated) {
         return;
       }
 
@@ -117,26 +154,21 @@ function renderHabits() {
       refreshUI();
     });
 
-    // Delete button: remove this habit from the array.
-    deleteButton.type = 'button';
-    deleteButton.textContent = 'Delete';
-    deleteButton.addEventListener('click', function () {
+    deleteButton.addEventListener('click', async function () {
+      const wasDeleted = await deleteHabitInSupabase(habit.id);
+
+      if (!wasDeleted) {
+        return;
+      }
+
       habits.splice(index, 1);
       refreshUI();
     });
 
-    label.appendChild(checkbox);
-    label.appendChild(nameText);
-    actions.appendChild(editButton);
-    actions.appendChild(deleteButton);
-    row.appendChild(label);
-    row.appendChild(actions);
-    listItem.appendChild(row);
     habitList.appendChild(listItem);
   });
 }
 
-// Count completed habits from data model and update the text.
 function updateCompletionCount() {
   let completedHabits = 0;
 
@@ -149,8 +181,23 @@ function updateCompletionCount() {
   completionText.textContent = 'Completed: ' + completedHabits + ' / ' + habits.length;
 }
 
-// Set every habit to incomplete.
+// ------------------------------------------------------------
+// User actions
+// ------------------------------------------------------------
+
+async function addHabit(name) {
+  const insertedHabit = await createHabitInSupabase(name);
+
+  if (!insertedHabit) {
+    return;
+  }
+
+  habits.push(insertedHabit);
+  refreshUI();
+}
+
 function resetAllHabits() {
+  // Reset is local-only because completed is local-only right now.
   habits.forEach(function (habit) {
     habit.completed = false;
   });
@@ -158,18 +205,7 @@ function resetAllHabits() {
   refreshUI();
 }
 
-// Add a brand new habit object to the array.
-function addHabit(name) {
-  habits.push({
-    name: name,
-    completed: false
-  });
-
-  refreshUI();
-}
-
-// Add habit when the form is submitted.
-addHabitForm.addEventListener('submit', function (event) {
+addHabitForm.addEventListener('submit', async function (event) {
   event.preventDefault();
 
   const newHabitName = habitNameInput.value.trim();
@@ -178,17 +214,21 @@ addHabitForm.addEventListener('submit', function (event) {
     return;
   }
 
-  addHabit(newHabitName);
+  await addHabit(newHabitName);
   habitNameInput.value = '';
 });
 
-// Reset all habits on button click.
 resetButton.addEventListener('click', resetAllHabits);
 
-// Page load flow:
-// 1) load data from localStorage
-// 2) rebuild list from data
-// 3) refresh completion text
-loadHabits();
-renderHabits();
-updateCompletionCount();
+// ------------------------------------------------------------
+// Page load flow
+// ------------------------------------------------------------
+// 1) Fetch id + name habits from Supabase
+// 2) Add local completed:false values
+// 3) Render UI + completion counter
+async function initializePage() {
+  await fetchHabitsFromSupabase();
+  refreshUI();
+}
+
+initializePage();
