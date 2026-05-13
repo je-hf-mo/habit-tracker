@@ -3,56 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Simple Habit Tracker</title>
+    <title>Simple Habit List</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <main class="container">
-      <h1>My Habit Tracker</h1>
-
-      <!-- JavaScript updates this text to show progress. -->
-      <p id="completion-text">Completed: 0 / 0</p>
+      <h1>My Habits</h1>
 
       <!--
-        Simple form for adding a new habit.
-        We read the text from this input when the Add button is clicked.
+        JavaScript updates this text while loading data
+        and when there is an error.
       -->
-      <form id="add-habit-form">
-        <input
-          id="habit-name-input"
-          type="text"
-          placeholder="Add a new habit"
-          aria-label="Habit name"
-          required
-        />
-        <button type="submit">Add Habit</button>
-      </form>
+      <p id="status-text" role="status" aria-live="polite">Loading habits...</p>
 
-      <!-- This button clears all habits to incomplete. -->
-      <button id="reset-button" type="button">Reset All Habits</button>
-
-      <!-- JavaScript rebuilds this list from the habits array. -->
-      <ul id="habit-list"></ul>
+      <!--
+        This list is read-only for now.
+        We only show habit names from Supabase.
+      -->
+      <ul id="habit-list" aria-label="Habit names"></ul>
     </main>
-
-    <!--
-      Reusable habit item structure.
-      JavaScript clones this template for each habit.
-    -->
-    <template id="habit-item-template">
-      <li>
-        <div class="habit-row">
-          <label>
-            <input type="checkbox" />
-            <span class="habit-name"></span>
-          </label>
-          <div class="habit-actions">
-            <button type="button" class="edit-habit-button">Edit</button>
-            <button type="button" class="delete-habit-button">Delete</button>
-          </div>
-        </div>
-      </li>
-    </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>
