@@ -3,21 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Simple Habit Tracker</title>
+    <title>Simple Habit List</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <main class="container">
       <h1>My Habits</h1>
 
-      <!-- Shows loading messages and any Supabase errors. -->
+      <!--
+        JavaScript updates this text while loading data
+        and when there is an error.
+      -->
       <p id="status-text" role="status" aria-live="polite">Loading habits...</p>
 
-      <!-- Shows how many habits are currently checked in this browser session. -->
-      <p id="completion-text">Completed: 0 / 0</p>
-
-      <!-- JavaScript builds this list from Supabase habit rows. -->
-      <ul id="habit-list" aria-label="Habit checklist"></ul>
+      <!--
+        This list is read-only for now.
+        We only show habit names from Supabase.
+      -->
+      <ul id="habit-list" aria-label="Habit names"></ul>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

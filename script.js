@@ -1,31 +1,37 @@
 // ------------------------------------------------------------
 // Supabase connection settings
 // ------------------------------------------------------------
+// These values tell the app how to connect to your Supabase project.
 const SUPABASE_URL = 'https://lwpzoabxiszakrkeqgms.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY =
   'sb_publishable_WUO5mINQS4VX50X3ZhxIOw_syKnHAqV';
 
-// Create one reusable Supabase client.
+// Create one Supabase client that we reuse.
+// window.supabase is available because of the CDN script in index.html.
 const supabaseClient = window.supabase.createClient(
   SUPABASE_URL,
   SUPABASE_PUBLISHABLE_KEY
 );
 
 // ------------------------------------------------------------
-// Page elements and in-memory habit state
+// Elements and simple app state
 // ------------------------------------------------------------
 const statusText = document.getElementById('status-text');
-const completionText = document.getElementById('completion-text');
 const habitList = document.getElementById('habit-list');
 
-// Each habit in this array will look like:
-// { id: number, name: string, completed: boolean }
+// Guard: stop early if required HTML elements are missing.
+if (!statusText || !habitList) {
+  console.error('Missing required HTML elements: #status-text or #habit-list');
+}
+
+// We only keep id + name because that is all the table has right now.
 let habits = [];
 
 // ------------------------------------------------------------
-// Fetch habits from Supabase
+// Data function: fetch habits from Supabase
 // ------------------------------------------------------------
 async function fetchHabits() {
+  // Clear any previous status before a new request.
   statusText.classList.remove('error');
   statusText.textContent = 'Loading habits...';
 
@@ -34,82 +40,50 @@ async function fetchHabits() {
     .select('id, name')
     .order('id', { ascending: true });
 
+  // If Supabase returns an error, show it on the page and in console.
   if (error) {
     console.error('Error loading habits:', error);
     statusText.classList.add('error');
     statusText.textContent = 'Error loading habits: ' + error.message;
     habits = [];
     renderHabits();
-    updateCompletionText();
     return;
   }
 
-  // Keep completion local in memory for now.
-  habits = (data || []).map(function (habit) {
-    return {
-      id: habit.id,
-      name: habit.name,
-      completed: false
-    };
-  });
-
+  // Save the fetched rows in memory and render them.
+  habits = data || [];
   renderHabits();
-  updateCompletionText();
 
+  // Friendly status text after success.
   if (habits.length === 0) {
+    statusText.classList.remove('error');
     statusText.textContent = 'No habits found yet.';
   } else {
-    statusText.textContent = 'Habits loaded.';
+    statusText.classList.remove('error');
+    statusText.textContent = 'Loaded ' + habits.length + ' habit(s).';
   }
 }
 
 // ------------------------------------------------------------
-// Render habits with checkboxes
+// UI function: show habit names only
 // ------------------------------------------------------------
 function renderHabits() {
   habitList.innerHTML = '';
 
-  habits.forEach(function (habit, index) {
+  habits.forEach(function (habit) {
     const listItem = document.createElement('li');
-    const label = document.createElement('label');
-    const checkbox = document.createElement('input');
-    const nameText = document.createElement('span');
 
-    checkbox.type = 'checkbox';
-    checkbox.checked = habit.completed;
-    nameText.textContent = habit.name;
+    // We only display the habit name.
+    listItem.textContent = habit.name;
 
-    // Only update local in-memory state (not Supabase yet).
-    checkbox.addEventListener('change', function () {
-      habits[index].completed = checkbox.checked;
-      updateCompletionText();
-    });
-
-    label.appendChild(checkbox);
-    label.appendChild(nameText);
-    listItem.appendChild(label);
     habitList.appendChild(listItem);
   });
 }
 
 // ------------------------------------------------------------
-// Update completion counter text
-// ------------------------------------------------------------
-function updateCompletionText() {
-  const completedCount = habits.filter(function (habit) {
-    return habit.completed;
-  }).length;
-
-  completionText.textContent = 'Completed: ' + completedCount + ' / ' + habits.length;
-}
-
-// ------------------------------------------------------------
 // Page startup
 // ------------------------------------------------------------
-if (!statusText || !completionText || !habitList) {
-  console.error(
-    'Missing required HTML elements: #status-text, #completion-text, or #habit-list'
-  );
-} else {
+// Load habits once when the page first opens.
+if (statusText && habitList) {
   fetchHabits();
 }
