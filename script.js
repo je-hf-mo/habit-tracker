@@ -1,187 +1,115 @@
-// A single key name so we always save/load from the same localStorage location.
-const HABITS_STORAGE_KEY = 'habitsData';
+// ------------------------------------------------------------
+// Supabase connection settings
+// ------------------------------------------------------------
+const SUPABASE_URL = 'https://lwpzoabxiszakrkeqgms.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY =
+  'sb_publishable_WUO5mINQS4VX50X3ZhxIOw_syKnHAqV';
 
-// Grab elements we will use many times.
+// Create one reusable Supabase client.
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY
+);
+
+// ------------------------------------------------------------
+// Page elements and in-memory habit state
+// ------------------------------------------------------------
+const statusText = document.getElementById('status-text');
 const completionText = document.getElementById('completion-text');
 const habitList = document.getElementById('habit-list');
-const resetButton = document.getElementById('reset-button');
-const addHabitForm = document.getElementById('add-habit-form');
-const habitNameInput = document.getElementById('habit-name-input');
 
-// This is our structured data model:
-// each habit is an object like { name: 'Read 10 pages', completed: false }.
+// Each habit in this array will look like:
+// { id: number, name: string, completed: boolean }
 let habits = [];
 
-// Default habits used the first time someone opens the page.
-const defaultHabits = [
-  { name: 'Drink 8 glasses of water', completed: false },
-  { name: 'Walk for 20 minutes', completed: false },
-  { name: 'Read 10 pages', completed: false },
-  { name: 'Meditate for 5 minutes', completed: false },
-  { name: 'Sleep before 11 PM', completed: false }
-];
+// ------------------------------------------------------------
+// Fetch habits from Supabase
+// ------------------------------------------------------------
+async function fetchHabits() {
+  statusText.classList.remove('error');
+  statusText.textContent = 'Loading habits...';
 
-// Save the whole habits array to localStorage.
-function saveHabits() {
-  localStorage.setItem(HABITS_STORAGE_KEY, JSON.stringify(habits));
-}
+  const { data, error } = await supabaseClient
+    .from('habits')
+    .select('id, name')
+    .order('id', { ascending: true });
 
-// Read habits array from localStorage.
-function loadHabits() {
-  const savedHabitsText = localStorage.getItem(HABITS_STORAGE_KEY);
-
-  // If nothing is saved yet, start with the default habits.
-  if (!savedHabitsText) {
-    habits = defaultHabits;
-    saveHabits();
+  if (error) {
+    console.error('Error loading habits:', error);
+    statusText.classList.add('error');
+    statusText.textContent = 'Error loading habits: ' + error.message;
+    habits = [];
+    renderHabits();
+    updateCompletionText();
     return;
   }
 
-  const parsedHabits = JSON.parse(savedHabitsText);
+  // Keep completion local in memory for now.
+  habits = (data || []).map(function (habit) {
+    return {
+      id: habit.id,
+      name: habit.name,
+      completed: false
+    };
+  });
 
-  // Basic safety check: only use data if it is an array.
-  if (Array.isArray(parsedHabits)) {
-    habits = parsedHabits;
+  renderHabits();
+  updateCompletionText();
+
+  if (habits.length === 0) {
+    statusText.textContent = 'No habits found yet.';
   } else {
-    habits = defaultHabits;
-    saveHabits();
+    statusText.textContent = 'Habits loaded.';
   }
 }
 
-// Keep all UI refresh work in one place.
-// We call this after every action that changes data.
-function refreshUI() {
-  saveHabits();
-  renderHabits();
-  updateCompletionCount();
-}
-
-// Build the checkbox list from the habits array.
+// ------------------------------------------------------------
+// Render habits with checkboxes
+// ------------------------------------------------------------
 function renderHabits() {
-  // Clear old list items so we can rebuild from scratch.
   habitList.innerHTML = '';
 
   habits.forEach(function (habit, index) {
     const listItem = document.createElement('li');
-    const row = document.createElement('div');
     const label = document.createElement('label');
     const checkbox = document.createElement('input');
     const nameText = document.createElement('span');
-    const actions = document.createElement('div');
-    const editButton = document.createElement('button');
-    const deleteButton = document.createElement('button');
-
-    row.className = 'habit-row';
-    actions.className = 'habit-actions';
 
     checkbox.type = 'checkbox';
     checkbox.checked = habit.completed;
-
-    // Show the current habit name.
     nameText.textContent = habit.name;
 
-    // When one checkbox changes:
-    // 1) update data model
-    // 2) refresh saved data + list + counter
+    // Only update local in-memory state (not Supabase yet).
     checkbox.addEventListener('change', function () {
       habits[index].completed = checkbox.checked;
-      refreshUI();
-    });
-
-    // Edit button: ask for a new name and update if valid.
-    editButton.type = 'button';
-    editButton.textContent = 'Edit';
-    editButton.addEventListener('click', function () {
-      const updatedName = prompt('Edit habit name:', habits[index].name);
-
-      // If user clicks Cancel, prompt returns null.
-      if (updatedName === null) {
-        return;
-      }
-
-      const trimmedName = updatedName.trim();
-
-      // Do not allow blank names.
-      if (!trimmedName) {
-        return;
-      }
-
-      habits[index].name = trimmedName;
-      refreshUI();
-    });
-
-    // Delete button: remove this habit from the array.
-    deleteButton.type = 'button';
-    deleteButton.textContent = 'Delete';
-    deleteButton.addEventListener('click', function () {
-      habits.splice(index, 1);
-      refreshUI();
+      updateCompletionText();
     });
 
     label.appendChild(checkbox);
     label.appendChild(nameText);
-    actions.appendChild(editButton);
-    actions.appendChild(deleteButton);
-    row.appendChild(label);
-    row.appendChild(actions);
-    listItem.appendChild(row);
+    listItem.appendChild(label);
     habitList.appendChild(listItem);
   });
 }
 
-// Count completed habits from data model and update the text.
-function updateCompletionCount() {
-  let completedHabits = 0;
+// ------------------------------------------------------------
+// Update completion counter text
+// ------------------------------------------------------------
+function updateCompletionText() {
+  const completedCount = habits.filter(function (habit) {
+    return habit.completed;
+  }).length;
 
-  habits.forEach(function (habit) {
-    if (habit.completed) {
-      completedHabits = completedHabits + 1;
-    }
-  });
-
-  completionText.textContent = 'Completed: ' + completedHabits + ' / ' + habits.length;
+  completionText.textContent = 'Completed: ' + completedCount + ' / ' + habits.length;
 }
 
-// Set every habit to incomplete.
-function resetAllHabits() {
-  habits.forEach(function (habit) {
-    habit.completed = false;
-  });
-
-  refreshUI();
+// ------------------------------------------------------------
+// Page startup
+// ------------------------------------------------------------
+if (!statusText || !completionText || !habitList) {
+  console.error(
+    'Missing required HTML elements: #status-text, #completion-text, or #habit-list'
+  );
+} else {
+  fetchHabits();
 }
-
-// Add a brand new habit object to the array.
-function addHabit(name) {
-  habits.push({
-    name: name,
-    completed: false
-  });
-
-  refreshUI();
-}
-
-// Add habit when the form is submitted.
-addHabitForm.addEventListener('submit', function (event) {
-  event.preventDefault();
-
-  const newHabitName = habitNameInput.value.trim();
-
-  if (!newHabitName) {
-    return;
-  }
-
-  addHabit(newHabitName);
-  habitNameInput.value = '';
-});
-
-// Reset all habits on button click.
-resetButton.addEventListener('click', resetAllHabits);
-
-// Page load flow:
-// 1) load data from localStorage
-// 2) rebuild list from data
-// 3) refresh completion text
-loadHabits();
-renderHabits();
-updateCompletionCount();
